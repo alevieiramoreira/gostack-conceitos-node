@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-const { uuid } = require("uuidv4");
+const { uuid, isUuid } = require("uuidv4");
 
 const app = express();
 
@@ -17,7 +17,7 @@ app.get("/repositories", (request, response) => {
 app.post("/repositories", (request, response) => {
   const { title, url, techs } = request.body;
 
-  const repository = { id: uuid(), title, url: `http://github.com/${url}`, techs, likes: 0 };
+  const repository = { id: uuid(), title, url, techs, likes: 0 };
 
   repositories.push(repository);
 
@@ -31,14 +31,17 @@ app.put("/repositories/:id", (request, response) => {
   const repoIndex = repositories.findIndex(repository => repository.id === id);
 
   if(repoIndex < 0) {
-    return response.status(400).json({ error: 'Repository not found.' })
+    return response.status(400).json({ error: 'Repository not found.' });
   }
 
-  const repository = {
+  const { likes } = repositories[repoIndex];
+
+  const repository= {
     id,
-    title,
     url,
-    techs
+    title,
+    techs,
+    likes
   };
 
   repositories[repoIndex] = repository;
@@ -46,13 +49,13 @@ app.put("/repositories/:id", (request, response) => {
   return response.json(repository);
 });
 
-app.delete("/repositories/:id", (req, res) => {
+app.delete("/repositories/:id", (request, response) => {
   const { id } = request.params;
 
   const repoIndex = repositories.findIndex(repository => repository.id === id);
 
   if(repoIndex < 0) {
-    return response.status(400).json({ error: 'Repository not found.' })
+    return response.status(400).json({ error: 'Repository not found.' });
   }
 
   repositories.splice(repoIndex, 1);
@@ -64,8 +67,12 @@ app.post("/repositories/:id/like", (request, response) => {
   const { id } = request.params;
 
   const repository = repositories.find(repository => repository.id === id);
+  
+  if (!repository) { 
+    return response.status(400).json({ error: "Repository not found" });
+  }
 
-  repository.likes += 1;
+  repository.likes += 1; 
 
   return response.json(repository);
 });
